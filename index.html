@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Analyze Image Web App</title>
+    <!-- Favicon link -->
+    <link rel="icon" type="image/x-icon" href="https://leivadaros.dev/pl-favicon.ico">
+    <!-- Link to Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+        
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #83a4d4, #b6fbff);
+            font-family: 'Poppins', sans-serif;
+        }
+c
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        #fileInputContainer {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            cursor: pointer;
+            background-color: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+
+        #fileInputContainer:hover {
+            background-color: #eef;
+            border-color: #007bff;
+        }
+
+        .img-container {
+            max-width: 100%;
+            margin: 20px auto;
+        }
+
+        #imageDisplay {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 0 auto;
+            animation: fadeInImage 1.2s ease-in-out;
+        }
+
+        .lds-ring {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .lds-ring div {
+            box-sizing: border-box;
+            display: block;
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border: 8px solid #007bff;
+            border-radius: 50%;
+            animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            border-color: #007bff transparent transparent transparent;
+        }
+
+        .lds-ring div:nth-child(1) {
+            animation-delay: -0.45s;
+        }
+
+        .lds-ring div:nth-child(2) {
+            animation-delay: -0.3s;
+        }
+
+        .lds-ring div:nth-child(3) {
+            animation-delay: -0.15s;
+        }
+
+        @keyframes lds-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInImage {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="animate__animated animate__bounce text-center mb-4">🎨 Analyze Your Image</h1>
+
+        <div class="text-center mb-3">
+            <div id="fileInputContainer" onclick="document.getElementById('imageFile').click()">
+                <span class="animate__animated animate__pulse">Click or Drag to Choose a File</span>
+                <input type="file" class="form-control-file" id="imageFile" accept="image/*" style="display: none;" onchange="recognizeImage()">
+            </div>
+        </div>
+
+        <div class="text-center mb-5" id="recognizedImageSection" style="display: none;">
+            <div id="loadingAnimation" class="lds-ring" style="display: none;">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div id="imageContainer" class="img-container">
+                <img id="imageDisplay" class="img-fluid" alt="Recognized Image">
+            </div>
+        </div>
+
+        <div class="text-center" id="descriptionDisplay" style="display: none;"></div>
+
+        <div class="text-center mt-3">
+            <a href="https://github.com/paraskevasleivadaros/analyze-image-web-app" class="btn btn-outline-primary btn-lg" target="_blank">
+                View Source Code
+            </a>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        Designed with 💙 by <a href="https://leivadaros.dev/" target="_blank">Paraskevas Leivadaros</a>
+    </footer>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function recognizeImage() {
+            var formData = new FormData();
+            var fileInput = document.getElementById('imageFile');
+            formData.append('image', fileInput.files[0]);
+
+            document.getElementById('fileInputContainer').style.display = 'none';
+            document.getElementById('loadingAnimation').style.display = 'block';
+
+            $.ajax({
+                url: 'https://analyzeimage-leivadaros.cognitiveservices.azure.com/vision/v3.2/analyze?visualFeatures=Description',
+                beforeSend: function (xhrObj) {
+                    xhrObj.setRequestHeader("Content-Type", "application/octet-stream");
+                    xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", "a03ab615821a4f78ba4afce0e0c71ede");
+                },
+                type: "POST",
+                data: fileInput.files[0],
+                processData: false
+            })
+            .done(function (data) {
+                var imageURL = URL.createObjectURL(fileInput.files[0]);
+                $('#imageDisplay').attr('src', imageURL);
+
+                var description = data.description;
+                var descriptionText = "<p class='animate__animated animate__fadeInUp'><strong>Description: </strong>" + description.captions[0].text + "</p>";
+                descriptionText += "<p class='animate__animated animate__fadeInUp'><strong>Tags: </strong>" + description.tags.join(", ") + "</p>";
+                descriptionText += "<p class='animate__animated animate__fadeInUp'><strong>Accuracy: </strong>" + (description.captions[0].confidence * 100).toFixed(2) + "%</p>";
+                $('#descriptionDisplay').html(descriptionText);
+
+                document.getElementById('loadingAnimation').style.display = 'none';
+                document.getElementById('recognizedImageSection').style.display = 'block';
+                document.getElementById('descriptionDisplay').style.display = 'block';
+                document.getElementById('fileInputContainer').style.display = 'block';
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                alert('Error: ' + textStatus);
+                document.getElementById('loadingAnimation').style.display = 'none';
+                document.getElementById('fileInputContainer').style.display = 'block';
+            });
+        }
+    
+
+    </script>
+</body>
+
+</html>
